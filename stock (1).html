@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบจัดการสต๊อกสินค้า</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #f7fcf9; --card: #ffffff; --text: #0f172a; --muted: #64748b;
+      --accent: #0d9669; --accent-soft: rgba(13,150,105,.14);
+      --accent2: #d4724a; --accent2-soft: rgba(212,114,74,.14);
+      --border: rgba(15,23,42,.08);
+      --warning: #d97706; --warning-soft: rgba(217,119,6,.14);
+      --danger: #dc2626; --danger-soft: rgba(220,38,38,.14);
+    }
+    * { font-family: 'Nunito', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
+    html, body { background: var(--bg); color: var(--text); line-height: 1.6; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none; padding: 14px 24px;
+      border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 16px; width: 100%; min-height: 48px;
+    }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--card); color: var(--text); border: 1px solid var(--border);
+      padding: 12px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px; min-height: 44px;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger {
+      background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger);
+      padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    .input-field {
+      width: 100%; padding: 14px 16px; border: 1px solid var(--border);
+      border-radius: 12px; font-size: 16px; background: var(--card); color: var(--text);
+      outline: none; min-height: 48px;
+    }
+    .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .input-field:read-only { background: #f1f5f9; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .toast {
+      position: fixed; top: 16px; left: 16px; right: 16px; padding: 14px 20px;
+      border-radius: 12px; color: #fff; font-weight: 600; z-index: 9999;
+      animation: slideDown .3s ease; box-shadow: 0 4px 16px rgba(0,0,0,.15); text-align: center;
+    }
+    .toast.success { background: var(--accent); }
+    .toast.error { background: var(--danger); }
+    .toast.warning { background: var(--warning); }
+    @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .status-normal { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+    .status-warning { background: var(--warning-soft); color: var(--warning); border: 1px solid var(--warning); }
+    .status-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .product-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .product-card img { width: 100%; height: 140px; object-fit: cover; background: #f1f5f9; }
+    .tab-btn {
+      padding: 10px 14px; border-radius: 10px 10px 0 0; font-weight: 700; cursor: pointer;
+      border: none; background: transparent; color: var(--muted); border-bottom: 3px solid transparent;
+      font-size: 13px; white-space: nowrap; min-height: 44px;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-soft); }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; padding: 8px 4px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100;
+    }
+    .nav-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 8px 12px; border-radius: 10px; background: transparent; border: none;
+      color: var(--muted); font-size: 11px; cursor: pointer; min-width: 60px;
+    }
+    .nav-btn.active { color: var(--accent); background: var(--accent-soft); }
+    .nav-btn svg { width: 22px; height: 22px; }
+    .content-wrapper { padding-bottom: 80px; max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .header-bar {
+      position: sticky; top: 0; background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 50;
+    }
+    .stat-card { padding: 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); }
+    .stat-number { font-size: 28px; font-weight: 700; line-height: 1.2; }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .section-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+    #reader { width: 100% !important; border-radius: 12px; overflow: hidden; border: 2px solid var(--border) !important; margin: 12px 0; }
+    .desktop-nav { display: none; gap: 4px; }
+    .mobile-top-actions { display: flex; gap: 6px; }
+    .mobile-icon-btn {
+      width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card); display: flex; align-items: center; justify-content: center;
+      color: var(--muted); cursor: pointer; flex-shrink: 0;
+    }
+    .mobile-icon-btn svg { width: 20px; height: 20px; }
+    .mobile-icon-btn.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-soft); }
+    .loading-box {
+      position: fixed; inset: 0; background: rgba(255,255,255,.9);
+      display: flex; align-items: center; justify-content: center; z-index: 10000;
+      flex-direction: column; gap: 12px;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid var(--accent-soft);
+      border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (min-width: 768px) {
+      .bottom-nav { display: none; }
+      .desktop-nav { display: flex; }
+      .mobile-top-actions { display: none; }
+      .content-wrapper { padding: 24px; }
+      .btn-primary { width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingBox" class="loading-box">
+  <div class="spinner"></div>
+  <div id="loadingText" style="color:var(--muted);font-weight:600;">กำลังโหลดระบบ...</div>
+</div>
+
+<div id="app" style="display:none;">
+  <!-- LOGIN PAGE -->
+  <div id="page-login" class="page active">
+    <div style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh;">
+      <div class="card" style="width:100%;max-width:420px;">
+        <div style="text-align:center;margin-bottom:28px;">
+          <div style="width:72px;height:72px;border-radius:20px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+            </svg>
+          </div>
+          <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">ระบบจัดการสต๊อก</h1>
+          <p style="color:var(--muted);font-size:14px;">เข้าสู่ระบบเพื่อใช้งาน</p>
+        </div>
+        <form id="loginForm" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อผู้ใช้</label>
+            <input type="text" id="loginUser" class="input-field" placeholder="กรอกชื่อผู้ใช้" required>
+          </div>
+          <div>
+            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสผ่าน</label>
+            <input type="password" id="loginPass" class="input-field" placeholder="กรอกรหัสผ่าน" required>
+          </div>
+          <div id="loginError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
+          <button type="submit" class="btn-primary" id="loginBtn">เข้าสู่ระบบ</button>
+        </form>
+        <div style="text-align:center;margin-top:18px;">
+          <span style="color:var(--muted);font-size:14px;">ยังไม่มีบัญชี? </span>
+          <button type="button" onclick="showPage('register')" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;">ลงทะเบียน</button>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:var(--accent-soft);border-radius:10px;font-size:12px;color:var(--muted);">
+          <strong>บัญชี Admin:</strong><br>
+          User: <code style="background:#fff;padding:2px 6px;border-radius:4px;">admin</code> | Pass: <code style="background:#fff;padding:2px 6px;border-radius:4px;">admin123</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTER PAGE -->
+  <div id="page-register" class="page">
+    <div style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh;">
+      <div class="card" style="width:100%;max-width:420px;">
+        <div style="text-align:center;margin-bottom:28px;">
+          <div style="width:72px;height:72px;border-radius:20px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+            </svg>
+          </div>
+          <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">ลงทะเบียน</h1>
+          <p style="color:var(--muted);font-size:14px;">สร้างบัญชีผู้ใช้ใหม่</p>
+        </div>
+        <form id="registerForm" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อผู้ใช้</label>
+            <input type="text" id="regUser" class="input-field" placeholder="กรอกชื่อผู้ใช้" required>
+          </div>
+          <div>
+            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสผ่าน</label>
+            <input type="password" id="regPass1" class="input-field" placeholder="กรอกรหัสผ่าน" required>
+          </div>
+          <div>
+            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ยืนยันรหัสผ่าน</label>
+            <input type="password" id="regPass2" class="input-field" placeholder="กรอกรหัสผ่านอีกครั้ง" required>
+          </div>
+          <div id="regError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
+          <button type="submit" class="btn-primary" id="regBtn">ลงทะเบียน</button>
+        </form>
+        <div style="text-align:center;margin-top:18px;">
+          <span style="color:var(--muted);font-size:14px;">มีบัญชีแล้ว? </span>
+          <button type="button" onclick="showPage('login')" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="page-main" class="page">
+    <div class="header-bar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+            <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+            <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:16px;">สต๊อกสินค้า</div>
+          <div style="font-size:12px;color:var(--muted);">
+            <span id="currentUserDisplay"></span>
+            <span id="adminBadge" class="badge" style="display:none;background:var(--accent2-soft);color:var(--accent2);margin-left:4px;">ADMIN</span>
+          </div>
+        </div>
+      </div>
+      <div class="desktop-nav">
+        <button type="button" class="nav-btn active" data-nav="home" onclick="showSection('home')">หน้าหลัก</button>
+        <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">เพิ่มสินค้า</button>
+        <button type="button" class="nav-btn" data-nav="inventory" onclick="showSection('inventory')">คลังสินค้า</button>
+        <button type="button" onclick="logout()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">ออก</button>
+      </div>
+      <div class="mobile-top-actions">
+        <button type="button" class="mobile-icon-btn" data-nav="inventory" onclick="showSection('inventory')" aria-label="คลังสินค้า">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        </button>
+        <button type="button" class="mobile-icon-btn" onclick="logout()" aria-label="ออก" style="color:var(--danger);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <!-- HOME -->
+      <div id="section-home" class="section">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;">
+          <div class="stat-card" style="border-left:4px solid var(--accent);">
+            <div class="stat-number" id="statTotal">0</div>
+            <div class="stat-label">สินค้าทั้งหมด</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid var(--accent);">
+            <div class="stat-number" id="statNormal" style="color:var(--accent);">0</div>
+            <div class="stat-label">สถานะปกติ</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid var(--warning);">
+            <div class="stat-number" id="statWarning" style="color:var(--warning);">0</div>
+            <div class="stat-label">เฝ้าระวัง</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid var(--danger);">
+            <div class="stat-number" id="statDanger" style="color:var(--danger);">0</div>
+            <div class="stat-label">ใกล้หมดอายุ</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto;">
+          <button type="button" class="tab-btn active" data-tab="danger" onclick="switchTab('danger')">
+            <span class="section-dot" style="background:var(--danger);"></span>ใกล้หมดอายุ <span id="tabCountDanger" style="background:var(--danger-soft);color:var(--danger);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="warning" onclick="switchTab('warning')">
+            <span class="section-dot" style="background:var(--warning);"></span>เฝ้าระวัง <span id="tabCountWarning" style="background:var(--warning-soft);color:var(--warning);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="normal" onclick="switchTab('normal')">
+            <span class="section-dot" style="background:var(--accent);"></span>ปกติ <span id="tabCountNormal" style="background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
+          </button>
+        </div>
+        <div id="productGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
+      </div>
+
+      <!-- ADD PRODUCT -->
+      <div id="section-add" class="section" style="display:none;">
+        <div class="card">
+          <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">เพิ่มสินค้า</h2>
+          <p style="color:var(--muted);margin-bottom:20px;font-size:13px;">สแกนบาร์โค้ดหรือกรอกข้อมูล</p>
+          <button type="button" id="scanToggle" onclick="toggleScanner()" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/></svg>
+            <span id="scanBtnText">เปิดกล้องสแกนบาร์โค้ด</span>
+          </button>
+          <div id="reader"></div>
+          <div id="scanStatus" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;"></div>
+          <form id="addProductForm" style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อสินค้า *</label>
+              <input type="text" id="prodName" class="input-field" placeholder="กรอกชื่อสินค้า" required>
+            </div>
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสบาร์โค้ด *</label>
+              <input type="text" id="prodBarcode" class="input-field" placeholder="สแกนหรือกรอกรหัส" required>
+            </div>
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">วันหมดอายุ *</label>
+              <input type="date" id="prodExpiry" class="input-field" required>
+            </div>
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รูปภาพ</label>
+              <input type="file" id="prodImage" accept="image/*" class="input-field" style="padding:10px;font-size:14px;">
+            </div>
+            <div id="imagePreview" style="display:none;text-align:center;">
+              <img id="previewImg" style="max-width:100%;max-height:200px;border-radius:12px;border:2px solid var(--border);">
+            </div>
+            <div id="addFormError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button type="submit" class="btn-primary">เพิ่มสินค้า</button>
+              <button type="button" class="btn-secondary" onclick="clearAddForm()">ล้างฟอร์ม</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="section-inventory" class="section" style="display:none;">
+        <div class="card" style="margin-bottom:14px;padding:14px;">
+          <div style="font-size:12px;color:var(--muted);background:var(--accent-soft);padding:8px 12px;border-radius:8px;text-align:center;">
+            <span id="inventoryPermText">ผู้ใช้ทั่วไป: ดูได้อย่างเดียว</span>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <input type="text" id="inventorySearch" class="input-field" placeholder="ค้นหาสินค้า..." oninput="renderInventory()">
+        </div>
+        <div id="inventoryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <button type="button" class="nav-btn active" data-nav="home" onclick="showSection('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>หน้าหลัก</span>
+      </button>
+      <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>เพิ่ม</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Safe localStorage wrapper — falls back to in-memory storage if
+  // localStorage is blocked (e.g. sandboxed iframe preview without
+  // 'allow-same-origin'), so the app keeps working instead of throwing.
+  var memoryFallback = {};
+  var storageAvailable = (function() {
+    try {
+      var t = '__storage_test__';
+      window.localStorage.setItem(t, t);
+      window.localStorage.removeItem(t);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  })();
+  var safeStorage = {
+    getItem: function(key) {
+      if (storageAvailable) {
+        try { return window.localStorage.getItem(key); } catch (e) { /* fall through */ }
+      }
+      return Object.prototype.hasOwnProperty.call(memoryFallback, key) ? memoryFallback[key] : null;
+    },
+    setItem: function(key, value) {
+      if (storageAvailable) {
+        try { window.localStorage.setItem(key, value); return; } catch (e) { /* fall through */ }
+      }
+      memoryFallback[key] = value;
+    },
+    removeItem: function(key) {
+      if (storageAvailable) {
+        try { window.localStorage.removeItem(key); return; } catch (e) { /* fall through */ }
+      }
+      delete memoryFallback[key];
+    }
+  };
+
+  const SUPABASE_URL = 'https://njtjsumfjuxqlrnniypn.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_DftY5YmatyDZk5-uUDU36A_1bJdeCo9';
+
+  let supabase = null;
+  let currentUser = null;
+  let html5QrCode = null;
+  let scannerActive = false;
+  let currentTab = 'danger';
+
+  // ============ INIT: รอ Supabase โหลดเสร็จ ============
+  function initApp() {
+    let attempts = 0;
+    const maxAttempts = 50; // รอสูงสุด 10 วินาที
+
+    function check() {
+      attempts++;
+      
+      if (window.supabase && window.supabase.createClient) {
+        try {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          document.getElementById('loadingBox').style.display = 'none';
+          document.getElementById('app').style.display = 'block';
+          setupEvents();
+          checkSavedUser();
+        } catch(e) {
+          showError('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + e.message);
+        }
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        showError('ไม่สามารถโหลดระบบได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้า');
+        return;
+      }
+
+      document.getElementById('loadingText').textContent = 
+        'กำลังโหลดระบบ... (' + Math.round(attempts/maxAttempts*100) + '%)';
+      
+      setTimeout(check, 200);
+    }
+
+    check();
+  }
+
+  function showError(msg) {
+    document.getElementById('loadingText').innerHTML = 
+      '<span style="color:var(--danger);">' + msg + '</span>';
+    document.querySelector('.spinner').style.display = 'none';
+  }
+
+  // ============ UTILS ============
+  function showToast(msg, type) {
+    type = type || 'success';
+    document.querySelectorAll('.toast').forEach(function(t){ t.remove(); });
+    var t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3500);
+  }
+
+  function getDaysDiff(dateStr) {
+    var today = new Date(); today.setHours(0,0,0,0);
+    var expiry = new Date(dateStr); expiry.setHours(0,0,0,0);
+    return Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+  }
+
+  function getStatus(days) {
+    if (days <= 30) return {key:'danger', label:'ใกล้หมดอายุ', class:'status-danger'};
+    if (days <= 60) return {key:'warning', label:'เฝ้าระวัง', class:'status-warning'};
+    return {key:'normal', label:'ปกติ', class:'status-normal'};
+  }
+
+  function formatDate(dateStr) {
+    return new Date(dateStr).toLocaleDateString('th-TH', {year:'numeric', month:'short', day:'numeric'});
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // ============ PAGE NAV ============
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('page-' + page).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function showSection(sec) {
+    document.querySelectorAll('.section').forEach(function(s){ s.style.display = 'none'; });
+    document.getElementById('section-' + sec).style.display = 'block';
+    document.querySelectorAll('[data-nav]').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-nav') === sec);
+    });
+    window.scrollTo(0, 0);
+    if (sec === 'home') renderHome();
+    if (sec === 'inventory') renderInventory();
+  }
+
+  // ============ SETUP EVENTS ============
+  function setupEvents() {
+    // REGISTER
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var user = document.getElementById('regUser').value.trim();
+      var pass1 = document.getElementById('regPass1').value;
+      var pass2 = document.getElementById('regPass2').value;
+      var err = document.getElementById('regError');
+      var btn = document.getElementById('regBtn');
+
+      if (!user || !pass1 || !pass2) {
+        err.textContent = 'กรุณากรอกข้อมูลให้ครบ';
+        err.style.display = 'block';
+        return;
+      }
+      if (pass1 !== pass2) {
+        err.textContent = 'รหัสผ่านไม่ตรงกัน';
+        err.style.display = 'block';
+        return;
+      }
+      if (pass1.length < 4) {
+        err.textContent = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร';
+        err.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'กำลังดำเนินการ...';
+      err.style.display = 'none';
+
+      try {
+        var res = await supabase.from('users').insert({
+          username: user,
+          password: pass1,
+          is_admin: false
+        }).select();
+
+        if (res.error) {
+          if (res.code === '23505' || (res.error && res.error.message && res.error.message.includes('duplicate'))) {
+            err.textContent = 'ชื่อผู้ใช้นี้มีอยู่แล้ว';
+          } else {
+            err.textContent = 'ผิดพลาด: ' + (res.error ? res.error.message : JSON.stringify(res));
+          }
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'ลงทะเบียน';
+          return;
+        }
+
+        showToast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ', 'success');
+        document.getElementById('registerForm').reset();
+        showPage('login');
+        document.getElementById('loginUser').value = user;
+      } catch (ex) {
+        err.textContent = 'เกิดข้อผิดพลาด: ' + ex.message;
+        err.style.display = 'block';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'ลงทะเบียน';
+    });
+
+    // LOGIN
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var user = document.getElementById('loginUser').value.trim();
+      var pass = document.getElementById('loginPass').value;
+      var err = document.getElementById('loginError');
+      var btn = document.getElementById('loginBtn');
+
+      btn.disabled = true;
+      btn.textContent = 'กำลังเข้าสู่ระบบ...';
+      err.style.display = 'none';
+
+      try {
+        var res = await supabase.from('users').select('*')
+          .eq('username', user).eq('password', pass).single();
+
+        if (res.error || !res.data) {
+          err.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'เข้าสู่ระบบ';
+          return;
+        }
+
+        currentUser = res.data;
+        safeStorage.setItem('stock_user', JSON.stringify(currentUser));
+        enterApp();
+      } catch (ex) {
+        err.textContent = 'เกิดข้อผิดพลาด: ' + ex.message;
+        err.style.display = 'block';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'เข้าสู่ระบบ';
+    });
+
+    // BARCODE CHANGE
+    document.getElementById('prodBarcode').addEventListener('change', function(e) {
+      if (e.target.value.trim()) checkExistingProduct(e.target.value.trim());
+    });
+
+    // IMAGE UPLOAD
+    document.getElementById('prodImage').addEventListener('change', function(e) {
+      var f = e.target.files[0];
+      if (f) {
+        if (f.size > 5 * 1024 * 1024) {
+  showToast('รูปภาพต้องไม่เกิน 5MB', 'warning');
+  e.target.value = '';
+  return;
+}
+        var r = new FileReader();
+        r.onload = function(ev) {
+          document.getElementById('previewImg').src = ev.target.result;
+          document.getElementById('imagePreview').style.display = 'block';
+        };
+        r.readAsDataURL(f);
+      }
+    });
+
+    // ADD PRODUCT
+    document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var name = document.getElementById('prodName').value.trim();
+      var barcode = document.getElementById('prodBarcode').value.trim();
+      var expiry = document.getElementById('prodExpiry').value;
+      var image = document.getElementById('imagePreview').style.display === 'block' ? document.getElementById('previewImg').src : '';
+      var err = document.getElementById('addFormError');
+
+      if (!name || !barcode || !expiry) {
+        err.textContent = 'กรอกข้อมูลให้ครบทุกช่องที่มี *';
+        err.style.display = 'block';
+        return;
+      }
+      if (getDaysDiff(expiry) < 0) {
+        err.textContent = 'วันหมดอายุไม่ใช่วันที่ผ่านมา';
+        err.style.display = 'block';
+        return;
+      }
+
+      err.style.display = 'none';
+
+      try {
+        var ex = await supabase.from('products').select('id').eq('barcode', barcode).single();
+        
+        if (ex.data) {
+          await supabase.from('products').update({expiry: expiry, image: image}).eq('id', ex.data.id);
+          showToast('อัปเดตวันหมดอายุสำเร็จ', 'success');
+        } else {
+          await supabase.from('products').insert({
+            name: name, barcode: barcode, expiry: expiry,
+            image: image, added_by: currentUser.username
+          });
+          showToast('เพิ่มสินค้าสำเร็จ', 'success');
+        }
+
+        clearAddForm();
+        showSection('home');
+      } catch (ex) {
+        err.textContent = 'ผิดพลาด: ' + ex.message;
+        err.style.display = 'block';
+      }
+    });
+
+    // Set min date
+    document.getElementById('prodExpiry').min = new Date().toISOString().split('T')[0];
+  }
+
+  // ============ AUTH FUNCTIONS ============
+  window.logout = function() {
+    currentUser = null;
+    safeStorage.removeItem('stock_user');
+    showPage('login');
+    document.getElementById('loginForm').reset();
+    showToast('ออกจากระบบแล้ว', 'success');
+  };
+
+  function enterApp() {
+    document.getElementById('currentUserDisplay').textContent = currentUser.username;
+    document.getElementById('adminBadge').style.display = currentUser.is_admin ? 'inline-block' : 'none';
+    document.getElementById('inventoryPermText').textContent = 
+      currentUser.is_admin ? 'ผู้ดูแลระบบ: แก้ไข/ลบได้' : 'ผู้ใช้ทั่วไป: ดูได้อย่างเดียว';
+    showPage('main');
+    showSection('home');
+  }
+
+  function checkSavedUser() {
+    var saved = safeStorage.getItem('stock_user');
+    if (saved) {
+      currentUser = JSON.parse(saved);
+      enterApp();
+    } else {
+      showPage('login');
+    }
+  }
+
+  // ============ SCANNER ============
+  window.toggleScanner = function() {
+    if (scannerActive) stopScanner();
+    else startScanner();
+  };
+
+  function startScanner() {
+    var reader = document.getElementById('reader');
+    reader.style.display = 'block';
+    document.getElementById('scanBtnText').textContent = 'ปิดกล้อง';
+    document.getElementById('scanStatus').textContent = 'กำลังเปิดกล้อง...';
+    
+    html5QrCode = new Html5Qrcode('reader');
+    html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: Math.min(300, window.innerWidth - 60), height: 150 } },
+      function(text) {
+        document.getElementById('prodBarcode').value = text;
+        document.getElementById('scanStatus').textContent = 'สแกนสำเร็จ';
+        showToast('สแกนสำเร็จ', 'success');
+        checkExistingProduct(text);
+        stopScanner();
+      },
+      function() {}
+    ).then(function() {
+      scannerActive = true;
+      document.getElementById('scanStatus').textContent = 'นำบาร์โค้ดเข้าไปในกรอบ';
+    }).catch(function() {
+      reader.style.display = 'none';
+      document.getElementById('scanBtnText').textContent = 'เปิดกล้องสแกนบาร์โค้ด';
+      showToast('ไม่สามารถเปิดกล้องได้ กรอกรหัสเอง', 'warning');
+    });
+  }
+
+  function stopScanner() {
+    if (html5QrCode && scannerActive) {
+      html5QrCode.stop().then(function() {
+        scannerActive = false;
+        document.getElementById('reader').style.display = 'none';
+        document.getElementById('scanBtnText').textContent = 'เปิดกล้องสแกนบาร์โค้ด';
+      });
+    } else {
+      scannerActive = false;
+      document.getElementById('reader').style.display = 'none';
+      document.getElementById('scanBtnText').textContent = 'เปิดกล้องสแกนบาร์โค้ด';
+    }
+  }
+
+  async function checkExistingProduct(barcode) {
+    try {
+      var res = await supabase.from('products').select('*').eq('barcode', barcode).single();
+      if (res.data) {
+        document.getElementById('prodName').value = res.data.name;
+        document.getElementById('prodName').readOnly = true;
+        document.getElementById('prodBarcode').readOnly = true;
+        document.getElementById('prodExpiry').value = res.data.expiry;
+        if (res.data.image) {
+          document.getElementById('previewImg').src = res.data.image;
+          document.getElementById('imagePreview').style.display = 'block';
+        }
+        showToast('พบสินค้า แก้ได้แค่วันหมดอายุ', 'warning');
+      }
+    } catch(e) {}
+  }
+
+  // ============ ADD FORM ============
+  function clearAddForm() {
+    document.getElementById('addProductForm').reset();
+    document.getElementById('prodName').readOnly = false;
+    document.getElementById('prodBarcode').readOnly = false;
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('addFormError').style.display = 'none';
+    document.getElementById('scanStatus').textContent = '';
+    stopScanner();
+  }
+  window.clearAddForm = clearAddForm;
+
+  // ============ HOME RENDER ============
+  window.switchTab = function(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+    renderHome();
+  };
+
+  async function renderHome() {
+    try {
+      var res = await supabase.from('products').select('*');
+      var products = res.data || [];
+
+      var categorized = { normal: [], warning: [], danger: [] };
+      products.forEach(function(p) {
+        var days = getDaysDiff(p.expiry);
+        if (days < 0) return;
+        var st = getStatus(days);
+        p._days = days; p._status = st;
+        categorized[st.key].push(p);
+      });
+
+      Object.keys(categorized).forEach(function(k) {
+        categorized[k].sort(function(a, b) { return a._days - b._days; });
+      });
+
+      document.getElementById('statTotal').textContent = products.filter(function(p){ return getDaysDiff(p.expiry) >= 0; }).length;
+      document.getElementById('statNormal').textContent = categorized.normal.length;
+      document.getElementById('statWarning').textContent = categorized.warning.length;
+      document.getElementById('statDanger').textContent = categorized.danger.length;
+
+      document.getElementById('tabCountNormal').textContent = categorized.normal.length;
+      document.getElementById('tabCountWarning').textContent = categorized.warning.length;
+      document.getElementById('tabCountDanger').textContent = categorized.danger.length;
+
+      var list = categorized[currentTab];
+      var grid = document.getElementById('productGrid');
+
+      if (!list.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div style="font-weight:600;">ไม่มีสินค้าในหมวดนี้</div></div>';
+        return;
+      }
+
+      grid.innerHTML = list.map(function(p) {
+        var img = p.image 
+          ? '<img src="' + p.image + '">' 
+          : '<div style="height:140px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>';
+        return '<div class="product-card">' + img +
+          '<div style="padding:12px;">' +
+            '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + escapeHtml(p.name) + '</div>' +
+            '<span class="badge ' + p._status.class + '">' + p._status.label + '</span>' +
+            '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
+            '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
+            '<div style="font-size:11px;color:' + (p._days<=30?'var(--danger)':p._days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">เหลือ ' + p._days + ' วัน</div>' +
+          '</div></div>';
+      }).join('');
+    } catch(e) {}
+  }
+
+  // ============ INVENTORY RENDER ============
+  window.renderInventory = async function() {
+    try {
+      var res = await supabase.from('products').select('*');
+      var products = res.data || [];
+
+      var q = document.getElementById('inventorySearch').value.toLowerCase().trim();
+      if (q) products = products.filter(function(p) {
+        return p.name.toLowerCase().includes(q) || p.barcode.includes(q);
+      });
+      products.sort(function(a, b) { return getDaysDiff(a.expiry) - getDaysDiff(b.expiry); });
+
+      var grid = document.getElementById('inventoryGrid');
+      if (!products.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div style="font-weight:600;">คลังสินค้าว่างเปล่า</div></div>';
+        return;
+      }
+
+      grid.innerHTML = products.map(function(p) {
+        var days = getDaysDiff(p.expiry);
+        var expired = days < 0;
+        var st = expired ? {label:'หมดอายุ', class:'status-danger'} : getStatus(days);
+        var img = p.image 
+          ? '<img src="' + p.image + '">' 
+          : '<div style="height:140px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>';
+        
+        var adminBtns = '';
+        if (currentUser && currentUser.is_admin) {
+          adminBtns = '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+            '<button type="button" onclick="editInventoryItem(' + p.id + ')" class="btn-secondary" style="flex:1;padding:8px;font-size:12px;">แก้ไข</button>' +
+            '<button type="button" onclick="deleteInventoryItem(' + p.id + ')" class="btn-danger" style="flex:1;padding:8px;font-size:12px;">ลบ</button>' +
+          '</div>';
+        }
+
+        return '<div class="product-card">' + img +
+          '<div style="padding:12px;">' +
+            '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + escapeHtml(p.name) + '</div>' +
+            '<span class="badge ' + st.class + '">' + st.label + '</span>' +
+            '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
+            '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
+            '<div style="font-size:11px;color:' + (expired?'var(--danger)':days<=30?'var(--danger)':days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">' + (expired?'หมดอายุ '+Math.abs(days)+' วัน':'เหลือ '+days+' วัน') + '</div>' +
+            adminBtns +
+          '</div></div>';
+      }).join('');
+    } catch(e) {}
+  };
+
+  window.editInventoryItem = async function(id) {
+    try {
+      var res = await supabase.from('products').select('*').eq('id', id).single();
+      var p = res.data;
+      if (!p) return;
+      document.getElementById('prodName').value = p.name;
+      document.getElementById('prodName').readOnly = true;
+      document.getElementById('prodBarcode').value = p.barcode;
+      document.getElementById('prodBarcode').readOnly = true;
+      document.getElementById('prodExpiry').value = p.expiry;
+      if (p.image) {
+        document.getElementById('previewImg').src = p.image;
+        document.getElementById('imagePreview').style.display = 'block';
+      }
+      showSection('add');
+      showToast('แก้ไขได้เฉพาะวันหมดอายุ', 'warning');
+    } catch(e) {}
+  };
+
+  window.deleteInventoryItem = async function(id) {
+    if (!confirm('ต้องการลบสินค้านี้หรือไม่?')) return;
+    try {
+      await supabase.from('products').delete().eq('id', id);
+      renderInventory();
+      showToast('ลบสินค้าเรียบร้อย', 'success');
+    } catch(e) {
+      showToast('เกิดข้อผิดพลาด', 'error');
+    }
+  };
+
+  // ============ START ============
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
+
+  // Expose global functions
+  window.showPage = showPage;
+  window.showSection = showSection;
+  window.toggleScanner = toggleScanner;
+  window.switchTab = window.switchTab;
+  window.renderHome = renderHome;
+  window.renderInventory = window.renderInventory;
+  window.editInventoryItem = window.editInventoryItem;
+  window.deleteInventoryItem = window.deleteInventoryItem;
+  window.logout = window.logout;
+  window.clearAddForm = clearAddForm;
+
+})();
+</script>
+</body>
+</html>
