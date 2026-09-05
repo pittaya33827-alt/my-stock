@@ -8,7 +8,8 @@
   <!-- เร่งความเร็วฟอนต์ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://njtjsumfjuxqlrnniypn.supabase.co">
 
   <!-- ฟอนต์ -->
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -323,7 +324,7 @@
                 </div>
               </div>
               <div style="margin-bottom:14px;">
-                <input type="text" id="inventorySearch" class="input-field" placeholder="ค้นหาสินค้า..." oninput="renderInventory()">
+                <input type="text" id="inventorySearch" class="input-field" placeholder="ค้นหาสินค้า..." oninput="filterInventory()">
               </div>
               <div id="inventoryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
             </div>
@@ -343,9 +344,9 @@
         </div>
       </div>
 
-
+  <!-- ✅ วาง script บรรทัดนี้ท้ายสุด ก่อนปิด </body> เท่านั้น -->
+  <!-- html5-qrcode ถูกย้ายไปโหลดแบบ lazy (โหลดเฉพาะตอนกดเปิดกล้อง) เพื่อลดน้ำหนักหน้าแรก -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <script>
   (function() {
@@ -394,6 +395,45 @@
   let html5QrCode = null;
   let scannerActive = false;
   let currentTab = 'danger';
+
+  // ============ PRODUCTS CACHE ============
+  // Fixes the 2-5s wait on every menu click: previously every showSection()
+  // and every keystroke in search re-queried Supabase (and images are stored
+  // as base64 in the row, so each query is heavy). Now we keep the last
+  // fetched list in memory, paint instantly from it, and refresh quietly
+  // in the background. Mutations (add/edit/delete) force a fresh fetch.
+  let productsCache = null;
+  let productsFetchPromise = null;
+
+  function fetchProductsFresh() {
+    if (productsFetchPromise) return productsFetchPromise; // dedupe concurrent calls
+    productsFetchPromise = supabase.from('products').select('*').then(function(res) {
+      productsCache = res.data || [];
+      productsFetchPromise = null;
+      return productsCache;
+    }).catch(function() {
+      productsFetchPromise = null;
+      return productsCache || [];
+    });
+    return productsFetchPromise;
+  }
+
+  // ============ LAZY-LOAD BARCODE SCANNER LIBRARY ============
+  // html5-qrcode is large and only needed if the user actually opens the
+  // camera, so it's fetched on first use instead of blocking page load.
+  let qrLibPromise = null;
+  function loadQrCodeLib() {
+    if (window.Html5Qrcode) return Promise.resolve();
+    if (qrLibPromise) return qrLibPromise;
+    qrLibPromise = new Promise(function(resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+      s.onload = function() { resolve(); };
+      s.onerror = function() { qrLibPromise = null; reject(new Error('load failed')); };
+      document.head.appendChild(s);
+    });
+    return qrLibPromise;
+  }
 
   // ============ INIT: รอ Supabase โหลดเสร็จ ============
   function initApp() {
@@ -646,6 +686,7 @@
           showToast('เพิ่มสินค้าสำเร็จ', 'success');
         }
 
+        await fetchProductsFresh();
         clearAddForm();
         showSection('home');
       } catch (ex) {
@@ -688,8 +729,17 @@
 
   // ============ SCANNER ============
   window.toggleScanner = function() {
-    if (scannerActive) stopScanner();
-    else startScanner();
+    if (scannerActive) { stopScanner(); return; }
+    var btnText = document.getElementById('scanBtnText');
+    var prevText = btnText.textContent;
+    btnText.textContent = 'กำลังโหลด...';
+    loadQrCodeLib().then(function() {
+      btnText.textContent = prevText;
+      startScanner();
+    }).catch(function() {
+      btnText.textContent = prevText;
+      showToast('ไม่สามารถโหลดตัวสแกนบาร์โค้ดได้ กรอกรหัสเอง', 'warning');
+    });
   };
 
   function startScanner() {
@@ -736,14 +786,15 @@
 
   async function checkExistingProduct(barcode) {
     try {
-      var res = await supabase.from('products').select('*').eq('barcode', barcode).single();
-      if (res.data) {
-        document.getElementById('prodName').value = res.data.name;
+      var list = productsCache || (await fetchProductsFresh());
+      var p = list.find(function(x) { return x.barcode === barcode; });
+      if (p) {
+        document.getElementById('prodName').value = p.name;
         document.getElementById('prodName').readOnly = true;
         document.getElementById('prodBarcode').readOnly = true;
-        document.getElementById('prodExpiry').value = res.data.expiry;
-        if (res.data.image) {
-          document.getElementById('previewImg').src = res.data.image;
+        document.getElementById('prodExpiry').value = p.expiry;
+        if (p.image) {
+          document.getElementById('previewImg').src = p.image;
           document.getElementById('imagePreview').style.display = 'block';
         }
         showToast('พบสินค้า แก้ได้แค่วันหมดอายุ', 'warning');
@@ -772,15 +823,12 @@
     renderHome();
   };
 
-  async function renderHome() {
-    try {
-      var res = await supabase.from('products').select('*');
-      var products = res.data || [];
-
+  function paintHome(products) {
       var categorized = { normal: [], warning: [], danger: [] };
       products.forEach(function(p) {
         var days = getDaysDiff(p.expiry);
         if (days < 0) return;
+        if (p.hidden_from_home) return; // removed from home view only — still in inventory
         var st = getStatus(days);
         p._days = days; p._status = st;
         categorized[st.key].push(p);
@@ -790,7 +838,7 @@
         categorized[k].sort(function(a, b) { return a._days - b._days; });
       });
 
-      document.getElementById('statTotal').textContent = products.filter(function(p){ return getDaysDiff(p.expiry) >= 0; }).length;
+      document.getElementById('statTotal').textContent = categorized.normal.length + categorized.warning.length + categorized.danger.length;
       document.getElementById('statNormal').textContent = categorized.normal.length;
       document.getElementById('statWarning').textContent = categorized.warning.length;
       document.getElementById('statDanger').textContent = categorized.danger.length;
@@ -811,6 +859,10 @@
         var img = p.image 
           ? '<img src="' + p.image + '">' 
           : '<div style="height:140px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>';
+        var homeBtns = '<div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+          '<button type="button" onclick="editInventoryItem(' + p.id + ')" class="btn-secondary" style="flex:1;padding:8px;font-size:12px;">แก้ไข</button>' +
+          '<button type="button" onclick="hideFromHomeItem(' + p.id + ')" class="btn-danger" style="flex:1;padding:8px;font-size:12px;">ลบ</button>' +
+        '</div>';
         return '<div class="product-card">' + img +
           '<div style="padding:12px;">' +
             '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + escapeHtml(p.name) + '</div>' +
@@ -818,22 +870,30 @@
             '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (p._days<=30?'var(--danger)':p._days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">เหลือ ' + p._days + ' วัน</div>' +
+            homeBtns +
           '</div></div>';
       }).join('');
-    } catch(e) {}
+  }
+
+  async function renderHome() {
+    // paint instantly with whatever is cached (instant tab-switch feel),
+    // then quietly fetch the latest data and repaint if still on this section
+    paintHome(productsCache || []);
+    try {
+      var fresh = await fetchProductsFresh();
+      if (document.getElementById('section-home').style.display !== 'none') {
+        paintHome(fresh);
+      }
+    } catch (e) {}
   }
 
   // ============ INVENTORY RENDER ============
-  window.renderInventory = async function() {
-    try {
-      var res = await supabase.from('products').select('*');
-      var products = res.data || [];
-
+  function paintInventory(products) {
       var q = document.getElementById('inventorySearch').value.toLowerCase().trim();
       if (q) products = products.filter(function(p) {
         return p.name.toLowerCase().includes(q) || p.barcode.includes(q);
       });
-      products.sort(function(a, b) { return getDaysDiff(a.expiry) - getDaysDiff(b.expiry); });
+      products = products.slice().sort(function(a, b) { return getDaysDiff(a.expiry) - getDaysDiff(b.expiry); });
 
       var grid = document.getElementById('inventoryGrid');
       if (!products.length) {
@@ -867,13 +927,29 @@
             adminBtns +
           '</div></div>';
       }).join('');
-    } catch(e) {}
+  }
+
+  async function renderInventory() {
+    // paint instantly from cache, then refresh quietly in the background
+    paintInventory(productsCache || []);
+    try {
+      var fresh = await fetchProductsFresh();
+      if (document.getElementById('section-inventory').style.display !== 'none') {
+        paintInventory(fresh);
+      }
+    } catch (e) {}
+  }
+  window.renderInventory = renderInventory;
+
+  // Bound to the search box's oninput — filters the in-memory cache only,
+  // so typing never triggers a network request.
+  window.filterInventory = function() {
+    paintInventory(productsCache || []);
   };
 
-  window.editInventoryItem = async function(id) {
+  window.editInventoryItem = function(id) {
     try {
-      var res = await supabase.from('products').select('*').eq('id', id).single();
-      var p = res.data;
+      var p = (productsCache || []).find(function(x) { return x.id === id; });
       if (!p) return;
       document.getElementById('prodName').value = p.name;
       document.getElementById('prodName').readOnly = true;
@@ -893,10 +969,28 @@
     if (!confirm('ต้องการลบสินค้านี้หรือไม่?')) return;
     try {
       await supabase.from('products').delete().eq('id', id);
+      await fetchProductsFresh();
       renderInventory();
       showToast('ลบสินค้าเรียบร้อย', 'success');
     } catch(e) {
       showToast('เกิดข้อผิดพลาด', 'error');
+    }
+  };
+
+  // "ลบ" on the Home page does NOT delete the product from the database —
+  // it only marks it as hidden from Home. The item stays untouched in
+  // the Inventory page (matches the requested behavior). Requires a
+  // boolean column `hidden_from_home` on the `products` table.
+  window.hideFromHomeItem = async function(id) {
+    if (!confirm('นำสินค้านี้ออกจากหน้าหลักหรือไม่? (สินค้ายังคงอยู่ในคลังสินค้า)')) return;
+    try {
+      var res = await supabase.from('products').update({ hidden_from_home: true }).eq('id', id);
+      if (res.error) throw res.error;
+      await fetchProductsFresh();
+      renderHome();
+      showToast('นำออกจากหน้าหลักแล้ว', 'success');
+    } catch(e) {
+      showToast('เกิดข้อผิดพลาด — ตรวจสอบว่ามีคอลัมน์ hidden_from_home ในตาราง products แล้วหรือยัง', 'error');
     }
   };
 
@@ -914,8 +1008,10 @@
   window.switchTab = window.switchTab;
   window.renderHome = renderHome;
   window.renderInventory = window.renderInventory;
+  window.filterInventory = window.filterInventory;
   window.editInventoryItem = window.editInventoryItem;
   window.deleteInventoryItem = window.deleteInventoryItem;
+  window.hideFromHomeItem = window.hideFromHomeItem;
   window.logout = window.logout;
   window.clearAddForm = clearAddForm;
 
