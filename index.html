@@ -1,32 +1,20 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ชื่อเว็บของคุณ</title>
-  
-    <!-- ✅ เพิ่มตรงนี้: เร่งความเร็วฟอนต์ -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
-    <style>
-      /* ✅ ซ่อนโลโก้ Netlify */
-      .netlify-badge { display: none !important; }
-  
-      /* 👇 วาง CSS สไตล์เดิมของคุณทั้งหมด ต่อจากบรรทัดนี้ */
-      :root {
-        --bg: #f7fcf9; /* ... และอื่นๆ ทั้งหมดของคุณ */
-      }
-    </style>
-  </head>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ระบบจัดการสต๊อกสินค้า</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- เร่งความเร็วฟอนต์ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+
+  <!-- ฟอนต์ -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
+
     :root {
       --bg: #f7fcf9; --card: #ffffff; --text: #0f172a; --muted: #64748b;
       --accent: #0d9669; --accent-soft: rgba(13,150,105,.14);
@@ -133,236 +121,234 @@
     }
   
   </style>
-  <style>
-    .netlify-badge {
-      display: none !important;
-    }
-  </style>
 </head>
 <body>
 
-<!-- Loading -->
-<div id="loadingBox" class="loading-box">
-  <div class="spinner"></div>
-  <div id="loadingText" style="color:var(--muted);font-weight:600;">กำลังโหลดระบบ...</div>
-</div>
-
-<div id="app" style="display:none;">
-  <!-- LOGIN PAGE -->
-  <div id="page-login" class="page active">
-    <div style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh;">
-      <div class="card" style="width:100%;max-width:420px;">
-        <div style="text-align:center;margin-bottom:28px;">
-          <div style="width:72px;height:72px;border-radius:20px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
-              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
-              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
-            </svg>
-          </div>
-          <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">ระบบจัดการสต๊อก</h1>
-          <p style="color:var(--muted);font-size:14px;">เข้าสู่ระบบเพื่อใช้งาน</p>
-        </div>
-        <form id="loginForm" style="display:flex;flex-direction:column;gap:14px;">
-          <div>
-            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อผู้ใช้</label>
-            <input type="text" id="loginUser" class="input-field" placeholder="กรอกชื่อผู้ใช้" required>
-          </div>
-          <div>
-            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสผ่าน</label>
-            <input type="password" id="loginPass" class="input-field" placeholder="กรอกรหัสผ่าน" required>
-          </div>
-          <div id="loginError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
-          <button type="submit" class="btn-primary" id="loginBtn">เข้าสู่ระบบ</button>
-        </form>
-        <div style="text-align:center;margin-top:18px;">
-          <span style="color:var(--muted);font-size:14px;">ยังไม่มีบัญชี? </span>
-          <button type="button" onclick="showPage('register')" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;">ลงทะเบียน</button>
-        </div>
-        <div style="margin-top:16px;padding:12px;background:var(--accent-soft);border-radius:10px;font-size:12px;color:var(--muted);">
-          <strong>บัญชี Admin:</strong><br>
-          User: <code style="background:#fff;padding:2px 6px;border-radius:4px;">admin</code> | Pass: <code style="background:#fff;padding:2px 6px;border-radius:4px;">admin123</code>
-        </div>
+    <div id="loadingBox" class="loading-box">
+        <div class="spinner"></div>
+        <div id="loadingText" style="color:var(--muted);font-weight:600;">กำลังโหลดระบบ...</div>
       </div>
-    </div>
-  </div>
-
-  <!-- REGISTER PAGE -->
-  <div id="page-register" class="page">
-    <div style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh;">
-      <div class="card" style="width:100%;max-width:420px;">
-        <div style="text-align:center;margin-bottom:28px;">
-          <div style="width:72px;height:72px;border-radius:20px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-              <circle cx="8.5" cy="7" r="4"/>
-            </svg>
-          </div>
-          <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">ลงทะเบียน</h1>
-          <p style="color:var(--muted);font-size:14px;">สร้างบัญชีผู้ใช้ใหม่</p>
-        </div>
-        <form id="registerForm" style="display:flex;flex-direction:column;gap:14px;">
-          <div>
-            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อผู้ใช้</label>
-            <input type="text" id="regUser" class="input-field" placeholder="กรอกชื่อผู้ใช้" required>
-          </div>
-          <div>
-            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสผ่าน</label>
-            <input type="password" id="regPass1" class="input-field" placeholder="กรอกรหัสผ่าน" required>
-          </div>
-          <div>
-            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ยืนยันรหัสผ่าน</label>
-            <input type="password" id="regPass2" class="input-field" placeholder="กรอกรหัสผ่านอีกครั้ง" required>
-          </div>
-          <div id="regError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
-          <button type="submit" class="btn-primary" id="regBtn">ลงทะเบียน</button>
-        </form>
-        <div style="text-align:center;margin-top:18px;">
-          <span style="color:var(--muted);font-size:14px;">มีบัญชีแล้ว? </span>
-          <button type="button" onclick="showPage('login')" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;">เข้าสู่ระบบ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN APP -->
-  <div id="page-main" class="page">
-    <div class="header-bar">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:40px;height:40px;border-radius:12px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
-            <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
-            <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
-          </svg>
-        </div>
-        <div>
-          <div style="font-weight:700;font-size:16px;">สต๊อกสินค้า</div>
-          <div style="font-size:12px;color:var(--muted);">
-            <span id="currentUserDisplay"></span>
-            <span id="adminBadge" class="badge" style="display:none;background:var(--accent2-soft);color:var(--accent2);margin-left:4px;">ADMIN</span>
-          </div>
-        </div>
-      </div>
-      <div class="desktop-nav">
-        <button type="button" class="nav-btn active" data-nav="home" onclick="showSection('home')">หน้าหลัก</button>
-        <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">เพิ่มสินค้า</button>
-        <button type="button" class="nav-btn" data-nav="inventory" onclick="showSection('inventory')">คลังสินค้า</button>
-        <button type="button" onclick="logout()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">ออก</button>
-      </div>
-      <div class="mobile-top-actions">
-        <button type="button" class="mobile-icon-btn" data-nav="inventory" onclick="showSection('inventory')" aria-label="คลังสินค้า">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-        </button>
-        <button type="button" class="mobile-icon-btn" onclick="logout()" aria-label="ออก" style="color:var(--danger);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="content-wrapper">
-      <!-- HOME -->
-      <div id="section-home" class="section">
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;">
-          <div class="stat-card" style="border-left:4px solid var(--accent);">
-            <div class="stat-number" id="statTotal">0</div>
-            <div class="stat-label">สินค้าทั้งหมด</div>
-          </div>
-          <div class="stat-card" style="border-left:4px solid var(--accent);">
-            <div class="stat-number" id="statNormal" style="color:var(--accent);">0</div>
-            <div class="stat-label">สถานะปกติ</div>
-          </div>
-          <div class="stat-card" style="border-left:4px solid var(--warning);">
-            <div class="stat-number" id="statWarning" style="color:var(--warning);">0</div>
-            <div class="stat-label">เฝ้าระวัง</div>
-          </div>
-          <div class="stat-card" style="border-left:4px solid var(--danger);">
-            <div class="stat-number" id="statDanger" style="color:var(--danger);">0</div>
-            <div class="stat-label">ใกล้หมดอายุ</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto;">
-          <button type="button" class="tab-btn active" data-tab="danger" onclick="switchTab('danger')">
-            <span class="section-dot" style="background:var(--danger);"></span>ใกล้หมดอายุ <span id="tabCountDanger" style="background:var(--danger-soft);color:var(--danger);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
-          </button>
-          <button type="button" class="tab-btn" data-tab="warning" onclick="switchTab('warning')">
-            <span class="section-dot" style="background:var(--warning);"></span>เฝ้าระวัง <span id="tabCountWarning" style="background:var(--warning-soft);color:var(--warning);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
-          </button>
-          <button type="button" class="tab-btn" data-tab="normal" onclick="switchTab('normal')">
-            <span class="section-dot" style="background:var(--accent);"></span>ปกติ <span id="tabCountNormal" style="background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
-          </button>
-        </div>
-        <div id="productGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
-      </div>
-
-      <!-- ADD PRODUCT -->
-      <div id="section-add" class="section" style="display:none;">
-        <div class="card">
-          <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">เพิ่มสินค้า</h2>
-          <p style="color:var(--muted);margin-bottom:20px;font-size:13px;">สแกนบาร์โค้ดหรือกรอกข้อมูล</p>
-          <button type="button" id="scanToggle" onclick="toggleScanner()" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/></svg>
-            <span id="scanBtnText">เปิดกล้องสแกนบาร์โค้ด</span>
-          </button>
-          <div id="reader"></div>
-          <div id="scanStatus" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;"></div>
-          <form id="addProductForm" style="display:flex;flex-direction:column;gap:14px;">
-            <div>
-              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อสินค้า *</label>
-              <input type="text" id="prodName" class="input-field" placeholder="กรอกชื่อสินค้า" required>
+      
+      <div id="app" style="display:none;">
+        <!-- LOGIN PAGE -->
+        <div id="page-login" class="page active">
+          <div style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh;">
+            <div class="card" style="width:100%;max-width:420px;">
+              <div style="text-align:center;margin-bottom:28px;">
+                <div style="width:72px;height:72px;border-radius:20px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                    <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+                    <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+                  </svg>
+                </div>
+                <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">ระบบจัดการสต๊อก</h1>
+                <p style="color:var(--muted);font-size:14px;">เข้าสู่ระบบเพื่อใช้งาน</p>
+              </div>
+              <form id="loginForm" style="display:flex;flex-direction:column;gap:14px;">
+                <div>
+                  <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อผู้ใช้</label>
+                  <input type="text" id="loginUser" class="input-field" placeholder="กรอกชื่อผู้ใช้" required>
+                </div>
+                <div>
+                  <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสผ่าน</label>
+                  <input type="password" id="loginPass" class="input-field" placeholder="กรอกรหัสผ่าน" required>
+                </div>
+                <div id="loginError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
+                <button type="submit" class="btn-primary" id="loginBtn">เข้าสู่ระบบ</button>
+              </form>
+              <div style="text-align:center;margin-top:18px;">
+                <span style="color:var(--muted);font-size:14px;">ยังไม่มีบัญชี? </span>
+                <button type="button" onclick="showPage('register')" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;">ลงทะเบียน</button>
+              </div>
+              <div style="margin-top:16px;padding:12px;background:var(--accent-soft);border-radius:10px;font-size:12px;color:var(--muted);">
+                <strong>บัญชี Admin:</strong><br>
+                User: <code style="background:#fff;padding:2px 6px;border-radius:4px;">admin</code> | Pass: <code style="background:#fff;padding:2px 6px;border-radius:4px;">admin123</code>
+              </div>
             </div>
-            <div>
-              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสบาร์โค้ด *</label>
-              <input type="text" id="prodBarcode" class="input-field" placeholder="สแกนหรือกรอกรหัส" required>
-            </div>
-            <div>
-              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">วันหมดอายุ *</label>
-              <input type="date" id="prodExpiry" class="input-field" required>
-            </div>
-            <div>
-              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รูปภาพ</label>
-              <input type="file" id="prodImage" accept="image/*" class="input-field" style="padding:10px;font-size:14px;">
-            </div>
-            <div id="imagePreview" style="display:none;text-align:center;">
-              <img id="previewImg" style="max-width:100%;max-height:200px;border-radius:12px;border:2px solid var(--border);">
-            </div>
-            <div id="addFormError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <button type="submit" class="btn-primary">เพิ่มสินค้า</button>
-              <button type="button" class="btn-secondary" onclick="clearAddForm()">ล้างฟอร์ม</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- INVENTORY -->
-      <div id="section-inventory" class="section" style="display:none;">
-        <div class="card" style="margin-bottom:14px;padding:14px;">
-          <div style="font-size:12px;color:var(--muted);background:var(--accent-soft);padding:8px 12px;border-radius:8px;text-align:center;">
-            <span id="inventoryPermText">ผู้ใช้ทั่วไป: ดูได้อย่างเดียว</span>
           </div>
         </div>
-        <div style="margin-bottom:14px;">
-          <input type="text" id="inventorySearch" class="input-field" placeholder="ค้นหาสินค้า..." oninput="renderInventory()">
+      
+        <!-- REGISTER PAGE -->
+        <div id="page-register" class="page">
+          <div style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh;">
+            <div class="card" style="width:100%;max-width:420px;">
+              <div style="text-align:center;margin-bottom:28px;">
+                <div style="width:72px;height:72px;border-radius:20px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">ลงทะเบียน</h1>
+                <p style="color:var(--muted);font-size:14px;">สร้างบัญชีผู้ใช้ใหม่</p>
+              </div>
+              <form id="registerForm" style="display:flex;flex-direction:column;gap:14px;">
+                <div>
+                  <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อผู้ใช้</label>
+                  <input type="text" id="regUser" class="input-field" placeholder="กรอกชื่อผู้ใช้" required>
+                </div>
+                <div>
+                  <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสผ่าน</label>
+                  <input type="password" id="regPass1" class="input-field" placeholder="กรอกรหัสผ่าน" required>
+                </div>
+                <div>
+                  <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ยืนยันรหัสผ่าน</label>
+                  <input type="password" id="regPass2" class="input-field" placeholder="กรอกรหัสผ่านอีกครั้ง" required>
+                </div>
+                <div id="regError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
+                <button type="submit" class="btn-primary" id="regBtn">ลงทะเบียน</button>
+              </form>
+              <div style="text-align:center;margin-top:18px;">
+                <span style="color:var(--muted);font-size:14px;">มีบัญชีแล้ว? </span>
+                <button type="button" onclick="showPage('login')" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;">เข้าสู่ระบบ</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="inventoryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
+      
+        <!-- MAIN APP -->
+        <div id="page-main" class="page">
+          <div class="header-bar">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:40px;height:40px;border-radius:12px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                  <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+                  <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+                </svg>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:16px;">สต๊อกสินค้า</div>
+                <div style="font-size:12px;color:var(--muted);">
+                  <span id="currentUserDisplay"></span>
+                  <span id="adminBadge" class="badge" style="display:none;background:var(--accent2-soft);color:var(--accent2);margin-left:4px;">ADMIN</span>
+                </div>
+              </div>
+            </div>
+            <div class="desktop-nav">
+              <button type="button" class="nav-btn active" data-nav="home" onclick="showSection('home')">หน้าหลัก</button>
+              <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">เพิ่มสินค้า</button>
+              <button type="button" class="nav-btn" data-nav="inventory" onclick="showSection('inventory')">คลังสินค้า</button>
+              <button type="button" onclick="logout()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">ออก</button>
+            </div>
+            <div class="mobile-top-actions">
+              <button type="button" class="mobile-icon-btn" data-nav="inventory" onclick="showSection('inventory')" aria-label="คลังสินค้า">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+              </button>
+              <button type="button" class="mobile-icon-btn" onclick="logout()" aria-label="ออก" style="color:var(--danger);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/></svg>
+              </button>
+            </div>
+          </div>
+      
+          <div class="content-wrapper">
+            <!-- HOME -->
+            <div id="section-home" class="section">
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;">
+                <div class="stat-card" style="border-left:4px solid var(--accent);">
+                  <div class="stat-number" id="statTotal">0</div>
+                  <div class="stat-label">สินค้าทั้งหมด</div>
+                </div>
+                <div class="stat-card" style="border-left:4px solid var(--accent);">
+                  <div class="stat-number" id="statNormal" style="color:var(--accent);">0</div>
+                  <div class="stat-label">สถานะปกติ</div>
+                </div>
+                <div class="stat-card" style="border-left:4px solid var(--warning);">
+                  <div class="stat-number" id="statWarning" style="color:var(--warning);">0</div>
+                  <div class="stat-label">เฝ้าระวัง</div>
+                </div>
+                <div class="stat-card" style="border-left:4px solid var(--danger);">
+                  <div class="stat-number" id="statDanger" style="color:var(--danger);">0</div>
+                  <div class="stat-label">ใกล้หมดอายุ</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto;">
+                <button type="button" class="tab-btn active" data-tab="danger" onclick="switchTab('danger')">
+                  <span class="section-dot" style="background:var(--danger);"></span>ใกล้หมดอายุ <span id="tabCountDanger" style="background:var(--danger-soft);color:var(--danger);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
+                </button>
+                <button type="button" class="tab-btn" data-tab="warning" onclick="switchTab('warning')">
+                  <span class="section-dot" style="background:var(--warning);"></span>เฝ้าระวัง <span id="tabCountWarning" style="background:var(--warning-soft);color:var(--warning);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
+                </button>
+                <button type="button" class="tab-btn" data-tab="normal" onclick="switchTab('normal')">
+                  <span class="section-dot" style="background:var(--accent);"></span>ปกติ <span id="tabCountNormal" style="background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:10px;font-size:11px;margin-left:4px;">0</span>
+                </button>
+              </div>
+              <div id="productGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
+            </div>
+      
+            <!-- ADD PRODUCT -->
+            <div id="section-add" class="section" style="display:none;">
+              <div class="card">
+                <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">เพิ่มสินค้า</h2>
+                <p style="color:var(--muted);margin-bottom:20px;font-size:13px;">สแกนบาร์โค้ดหรือกรอกข้อมูล</p>
+                <button type="button" id="scanToggle" onclick="toggleScanner()" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/></svg>
+                  <span id="scanBtnText">เปิดกล้องสแกนบาร์โค้ด</span>
+                </button>
+                <div id="reader"></div>
+                <div id="scanStatus" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;"></div>
+                <form id="addProductForm" style="display:flex;flex-direction:column;gap:14px;">
+                  <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ชื่อสินค้า *</label>
+                    <input type="text" id="prodName" class="input-field" placeholder="กรอกชื่อสินค้า" required>
+                  </div>
+                  <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รหัสบาร์โค้ด *</label>
+                    <input type="text" id="prodBarcode" class="input-field" placeholder="สแกนหรือกรอกรหัส" required>
+                  </div>
+                  <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">วันหมดอายุ *</label>
+                    <input type="date" id="prodExpiry" class="input-field" required>
+                  </div>
+                  <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รูปภาพ</label>
+                    <input type="file" id="prodImage" accept="image/*" class="input-field" style="padding:10px;font-size:14px;">
+                  </div>
+                  <div id="imagePreview" style="display:none;text-align:center;">
+                    <img id="previewImg" style="max-width:100%;max-height:200px;border-radius:12px;border:2px solid var(--border);">
+                  </div>
+                  <div id="addFormError" style="color:var(--danger);font-size:13px;font-weight:600;display:none;"></div>
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    <button type="submit" class="btn-primary">เพิ่มสินค้า</button>
+                    <button type="button" class="btn-secondary" onclick="clearAddForm()">ล้างฟอร์ม</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+      
+            <!-- INVENTORY -->
+            <div id="section-inventory" class="section" style="display:none;">
+              <div class="card" style="margin-bottom:14px;padding:14px;">
+                <div style="font-size:12px;color:var(--muted);background:var(--accent-soft);padding:8px 12px;border-radius:8px;text-align:center;">
+                  <span id="inventoryPermText">ผู้ใช้ทั่วไป: ดูได้อย่างเดียว</span>
+                </div>
+              </div>
+              <div style="margin-bottom:14px;">
+                <input type="text" id="inventorySearch" class="input-field" placeholder="ค้นหาสินค้า..." oninput="renderInventory()">
+              </div>
+              <div id="inventoryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
+            </div>
+          </div>
+      
+          <!-- Bottom Nav -->
+          <div class="bottom-nav">
+            <button type="button" class="nav-btn active" data-nav="home" onclick="showSection('home')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              <span>หน้าหลัก</span>
+            </button>
+            <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>เพิ่ม</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Bottom Nav -->
-    <div class="bottom-nav">
-      <button type="button" class="nav-btn active" data-nav="home" onclick="showSection('home')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-        <span>หน้าหลัก</span>
-      </button>
-      <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>เพิ่ม</span>
-      </button>
-    </div>
-  </div>
-</div>
 
-<script>
-(function() {
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <script>
+  (function() {
   'use strict';
 
   // Safe localStorage wrapper — falls back to in-memory storage if
@@ -933,8 +919,7 @@
   window.logout = window.logout;
   window.clearAddForm = clearAddForm;
 
-})
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+})();
+  </script>
 </body>
 </html>
