@@ -103,6 +103,15 @@
     }
     .mobile-icon-btn svg { width: 20px; height: 20px; }
     .mobile-icon-btn.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-soft); }
+    .fab-add {
+      position: fixed; right: 18px; bottom: calc(78px + env(safe-area-inset-bottom));
+      width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff;
+      border: none; display: flex; align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(13,150,105,.4); z-index: 99;
+    }
+    .fab-add:active { transform: scale(.94); }
+    .fab-add svg { width: 26px; height: 26px; }
+    .product-added-by { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .loading-box {
       position: fixed; inset: 0; background: rgba(255,255,255,.9);
       display: flex; align-items: center; justify-content: center; z-index: 10000;
@@ -119,6 +128,7 @@
       .mobile-top-actions { display: none; }
       .content-wrapper { padding: 24px; }
       .btn-primary { width: auto; }
+      .fab-add { display: none; }
     }
   
   </style>
@@ -232,9 +242,6 @@
               <button type="button" onclick="logout()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">ออก</button>
             </div>
             <div class="mobile-top-actions">
-              <button type="button" class="mobile-icon-btn" data-nav="inventory" onclick="showSection('inventory')" aria-label="คลังสินค้า">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-              </button>
               <button type="button" class="mobile-icon-btn" onclick="logout()" aria-label="ออก" style="color:var(--danger);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/></svg>
               </button>
@@ -336,11 +343,16 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
               <span>หน้าหลัก</span>
             </button>
-            <button type="button" class="nav-btn" data-nav="add" onclick="showSection('add')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>เพิ่ม</span>
+            <button type="button" class="nav-btn" data-nav="inventory" onclick="showSection('inventory')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+              <span>คลังสินค้า</span>
             </button>
           </div>
+
+          <!-- Floating add-product button (mobile only) -->
+          <button type="button" class="fab-add" data-nav="add" onclick="showSection('add')" aria-label="เพิ่มสินค้า">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
         </div>
       </div>
 
@@ -870,6 +882,7 @@
             '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (p._days<=30?'var(--danger)':p._days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">เหลือ ' + p._days + ' วัน</div>' +
+            (p.added_by ? '<div class="product-added-by">โดย ' + escapeHtml(p.added_by) + '</div>' : '') +
             homeBtns +
           '</div></div>';
       }).join('');
@@ -924,6 +937,7 @@
             '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (expired?'var(--danger)':days<=30?'var(--danger)':days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">' + (expired?'หมดอายุ '+Math.abs(days)+' วัน':'เหลือ '+days+' วัน') + '</div>' +
+            (p.added_by ? '<div class="product-added-by">โดย ' + escapeHtml(p.added_by) + '</div>' : '') +
             adminBtns +
           '</div></div>';
       }).join('');
