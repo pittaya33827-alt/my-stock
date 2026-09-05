@@ -1,5 +1,25 @@
 <!DOCTYPE html>
 <html lang="th">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชื่อเว็บของคุณ</title>
+  
+    <!-- ✅ เพิ่มตรงนี้: เร่งความเร็วฟอนต์ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+    <style>
+      /* ✅ ซ่อนโลโก้ Netlify */
+      .netlify-badge { display: none !important; }
+  
+      /* 👇 วาง CSS สไตล์เดิมของคุณทั้งหมด ต่อจากบรรทัดนี้ */
+      :root {
+        --bg: #f7fcf9; /* ... และอื่นๆ ทั้งหมดของคุณ */
+      }
+    </style>
+  </head>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -916,5 +936,7 @@
 
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </body>
 </html>
