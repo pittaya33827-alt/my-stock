@@ -308,6 +308,10 @@
                     <input type="date" id="prodExpiry" class="input-field" required>
                   </div>
                   <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">จำนวน (ชิ้น) *</label>
+                    <input type="number" id="prodQuantity" class="input-field" placeholder="กรอกจำนวนสินค้า" min="1" step="1" value="1" required>
+                  </div>
+                  <div>
                     <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รูปภาพ</label>
                     <input type="file" id="prodImage" accept="image/*" class="input-field" style="padding:10px;font-size:14px;">
                   </div>
@@ -668,11 +672,17 @@
       var name = document.getElementById('prodName').value.trim();
       var barcode = document.getElementById('prodBarcode').value.trim();
       var expiry = document.getElementById('prodExpiry').value;
+      var quantity = parseInt(document.getElementById('prodQuantity').value, 10);
       var image = document.getElementById('imagePreview').style.display === 'block' ? document.getElementById('previewImg').src : '';
       var err = document.getElementById('addFormError');
 
-      if (!name || !barcode || !expiry) {
+      if (!name || !barcode || !expiry || !document.getElementById('prodQuantity').value) {
         err.textContent = 'กรอกข้อมูลให้ครบทุกช่องที่มี *';
+        err.style.display = 'block';
+        return;
+      }
+      if (isNaN(quantity) || quantity < 1) {
+        err.textContent = 'กรอกจำนวนสินค้าเป็นตัวเลขตั้งแต่ 1 ขึ้นไป';
         err.style.display = 'block';
         return;
       }
@@ -688,12 +698,12 @@
         var ex = await supabase.from('products').select('id').eq('barcode', barcode).single();
         
         if (ex.data) {
-          await supabase.from('products').update({expiry: expiry, image: image}).eq('id', ex.data.id);
-          showToast('อัปเดตวันหมดอายุสำเร็จ', 'success');
+          await supabase.from('products').update({expiry: expiry, image: image, quantity: quantity}).eq('id', ex.data.id);
+          showToast('อัปเดตข้อมูลสินค้าสำเร็จ', 'success');
         } else {
           await supabase.from('products').insert({
             name: name, barcode: barcode, expiry: expiry,
-            image: image, added_by: currentUser.username
+            image: image, quantity: quantity, added_by: currentUser.username
           });
           showToast('เพิ่มสินค้าสำเร็จ', 'success');
         }
@@ -805,11 +815,12 @@
         document.getElementById('prodName').readOnly = true;
         document.getElementById('prodBarcode').readOnly = true;
         document.getElementById('prodExpiry').value = p.expiry;
+        document.getElementById('prodQuantity').value = p.quantity != null ? p.quantity : 1;
         if (p.image) {
           document.getElementById('previewImg').src = p.image;
           document.getElementById('imagePreview').style.display = 'block';
         }
-        showToast('พบสินค้า แก้ได้แค่วันหมดอายุ', 'warning');
+        showToast('พบสินค้า แก้ได้แค่วันหมดอายุและจำนวน', 'warning');
       }
     } catch(e) {}
   }
@@ -882,6 +893,7 @@
             '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (p._days<=30?'var(--danger)':p._days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">เหลือ ' + p._days + ' วัน</div>' +
+            '<div style="font-size:12px;margin-top:2px;"><strong>จำนวน:</strong> ' + (p.quantity != null ? p.quantity : '-') + ' ชิ้น</div>' +
             (p.added_by ? '<div class="product-added-by">โดย ' + escapeHtml(p.added_by) + '</div>' : '') +
             homeBtns +
           '</div></div>';
@@ -937,6 +949,7 @@
             '<div style="font-size:11px;color:var(--muted);margin-top:4px;">บาร์โค้ด: ' + escapeHtml(p.barcode) + '</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (expired?'var(--danger)':days<=30?'var(--danger)':days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">' + (expired?'หมดอายุ '+Math.abs(days)+' วัน':'เหลือ '+days+' วัน') + '</div>' +
+            '<div style="font-size:12px;margin-top:2px;"><strong>จำนวน:</strong> ' + (p.quantity != null ? p.quantity : '-') + ' ชิ้น</div>' +
             (p.added_by ? '<div class="product-added-by">โดย ' + escapeHtml(p.added_by) + '</div>' : '') +
             adminBtns +
           '</div></div>';
@@ -970,12 +983,13 @@
       document.getElementById('prodBarcode').value = p.barcode;
       document.getElementById('prodBarcode').readOnly = true;
       document.getElementById('prodExpiry').value = p.expiry;
+      document.getElementById('prodQuantity').value = p.quantity != null ? p.quantity : 1;
       if (p.image) {
         document.getElementById('previewImg').src = p.image;
         document.getElementById('imagePreview').style.display = 'block';
       }
       showSection('add');
-      showToast('แก้ไขได้เฉพาะวันหมดอายุ', 'warning');
+      showToast('แก้ไขได้เฉพาะวันหมดอายุและจำนวน', 'warning');
     } catch(e) {}
   };
 
