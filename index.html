@@ -312,6 +312,14 @@
                     <input type="number" id="prodQuantity" class="input-field" placeholder="กรอกจำนวนสินค้า" min="1" step="1" value="1" required>
                   </div>
                   <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">ตำแหน่งสินค้า *</label>
+                    <div style="display:flex;gap:8px;">
+                      <button type="button" id="locBtnStore" class="btn-secondary" onclick="setProdLocation('หน้าร้าน')" style="flex:1;">หน้าร้าน</button>
+                      <button type="button" id="locBtnStock" class="btn-secondary" onclick="setProdLocation('หลังสต๊อก')" style="flex:1;">หลังสต๊อก</button>
+                    </div>
+                    <input type="hidden" id="prodLocation" value="หน้าร้าน">
+                  </div>
+                  <div>
                     <label style="display:block;font-weight:600;margin-bottom:6px;font-size:14px;">รูปภาพ</label>
                     <input type="file" id="prodImage" accept="image/*" class="input-field" style="padding:10px;font-size:14px;">
                   </div>
@@ -673,6 +681,7 @@
       var barcode = document.getElementById('prodBarcode').value.trim();
       var expiry = document.getElementById('prodExpiry').value;
       var quantity = parseInt(document.getElementById('prodQuantity').value, 10);
+      var location = document.getElementById('prodLocation').value;
       var image = document.getElementById('imagePreview').style.display === 'block' ? document.getElementById('previewImg').src : '';
       var err = document.getElementById('addFormError');
 
@@ -698,12 +707,12 @@
         var ex = await supabase.from('products').select('id').eq('barcode', barcode).single();
         
         if (ex.data) {
-          await supabase.from('products').update({expiry: expiry, image: image, quantity: quantity}).eq('id', ex.data.id);
+          await supabase.from('products').update({expiry: expiry, image: image, quantity: quantity, location: location}).eq('id', ex.data.id);
           showToast('อัปเดตข้อมูลสินค้าสำเร็จ', 'success');
         } else {
           await supabase.from('products').insert({
             name: name, barcode: barcode, expiry: expiry,
-            image: image, quantity: quantity, added_by: currentUser.username
+            image: image, quantity: quantity, location: location, added_by: currentUser.username
           });
           showToast('เพิ่มสินค้าสำเร็จ', 'success');
         }
@@ -719,6 +728,9 @@
 
     // Set min date
     document.getElementById('prodExpiry').min = new Date().toISOString().split('T')[0];
+
+    // Default location toggle styling
+    setProdLocation('หน้าร้าน');
   }
 
   // ============ AUTH FUNCTIONS ============
@@ -834,9 +846,21 @@
     document.getElementById('previewImg').src = '';
     document.getElementById('addFormError').style.display = 'none';
     document.getElementById('scanStatus').textContent = '';
+    setProdLocation('หน้าร้าน');
     stopScanner();
   }
   window.clearAddForm = clearAddForm;
+
+  // ============ LOCATION TOGGLE (หน้าร้าน / หลังสต๊อก) ============
+  window.setProdLocation = function(loc) {
+    document.getElementById('prodLocation').value = loc;
+    var storeBtn = document.getElementById('locBtnStore');
+    var stockBtn = document.getElementById('locBtnStock');
+    var baseStyle = 'flex:1;';
+    var activeStyle = baseStyle + 'background:var(--accent);color:#fff;border-color:var(--accent);';
+    storeBtn.style.cssText = (loc === 'หน้าร้าน') ? activeStyle : baseStyle;
+    stockBtn.style.cssText = (loc === 'หลังสต๊อก') ? activeStyle : baseStyle;
+  };
 
   // ============ HOME RENDER ============
   window.switchTab = function(tab) {
@@ -894,6 +918,7 @@
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (p._days<=30?'var(--danger)':p._days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">เหลือ ' + p._days + ' วัน</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>จำนวน:</strong> ' + (p.quantity != null ? p.quantity : '-') + ' ชิ้น</div>' +
+            '<div style="font-size:11px;margin-top:2px;color:var(--muted);">📍 ' + escapeHtml(p.location || 'หน้าร้าน') + '</div>' +
             (p.added_by ? '<div class="product-added-by">โดย ' + escapeHtml(p.added_by) + '</div>' : '') +
             homeBtns +
           '</div></div>';
@@ -950,6 +975,7 @@
             '<div style="font-size:12px;margin-top:2px;"><strong>หมดอายุ:</strong> ' + formatDate(p.expiry) + '</div>' +
             '<div style="font-size:11px;color:' + (expired?'var(--danger)':days<=30?'var(--danger)':days<=60?'var(--warning)':'var(--muted)') + ';margin-top:2px;font-weight:700;">' + (expired?'หมดอายุ '+Math.abs(days)+' วัน':'เหลือ '+days+' วัน') + '</div>' +
             '<div style="font-size:12px;margin-top:2px;"><strong>จำนวน:</strong> ' + (p.quantity != null ? p.quantity : '-') + ' ชิ้น</div>' +
+            '<div style="font-size:11px;margin-top:2px;color:var(--muted);">📍 ' + escapeHtml(p.location || 'หน้าร้าน') + '</div>' +
             (p.added_by ? '<div class="product-added-by">โดย ' + escapeHtml(p.added_by) + '</div>' : '') +
             adminBtns +
           '</div></div>';
@@ -984,6 +1010,7 @@
       document.getElementById('prodBarcode').readOnly = true;
       document.getElementById('prodExpiry').value = p.expiry;
       document.getElementById('prodQuantity').value = p.quantity != null ? p.quantity : 1;
+      setProdLocation(p.location === 'หลังสต๊อก' ? 'หลังสต๊อก' : 'หน้าร้าน');
       if (p.image) {
         document.getElementById('previewImg').src = p.image;
         document.getElementById('imagePreview').style.display = 'block';
